@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+       http://www.springframework.org/schema/security
+       http://www.springframework.org/schema/security/spring-security-4.2.xsd">
+
+    <!-- Enables method security with expression-based access control -->
+    <security:global-method-security pre-post-annotations="enabled" secured-annotations="enabled">
+        <!-- Reference to a custom expression handler with ACL support -->
+        <security:expression-handler ref="expressionHandler"/>
+    </security:global-method-security>
+
+    <!-- A customized expression handler
+        permissionEvaluator: a reference to a custom PermissionEvaluator
+        roleHierarchy: defines the role order -->
+    <bean id="expressionHandler" class="org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler">
+        <property name="permissionEvaluator" ref="permissionEvaluatorWrapper"/>
+    </bean>
+
+    <bean id="permissionEvaluatorWrapper" class="com.maksym.springboot.example.acl.CustomPermissionEvaluator">
+        <constructor-arg ref="permissionEvaluator"/>
+        <constructor-arg>
+            <map>
+                <entry key="CREATE_UPDATE_ACCESS">
+                    <list>
+                        <bean id="adminCreateUpdateHandler" class="com.maksym.springboot.example.acl.handler.admin.AdminUserPermissionHandler"/>
+                    </list>
+                </entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <!-- A customized PermissionEvaluator that evaluates permissions via the ACL module -->
+    <bean class="org.springframework.security.acls.AclPermissionEvaluator" id="permissionEvaluator">
+        <!-- Reference to the ACL service which performs JDBC calls to an ACL database -->
+        <constructor-arg ref="aclService"/>
+        <property name="permissionFactory" ref="customPermissionFactory"/>
+    </bean>
+
+    <bean class="org.springframework.security.acls.domain.DefaultPermissionFactory" id="customPermissionFactory">
+        <constructor-arg type="java.lang.Class">
+            <value>
+                com.maksym.springboot.example.acl.handler.admin.CustomPermission
+            </value>
+        </constructor-arg>
+    </bean>
+
+    <!-- A customized ACL service which provides default JDBC implementation -->
+    <bean class="org.springframework.security.acls.jdbc.JdbcMutableAclService" id="aclService">
+        <constructor-arg ref="dataSource"/>
+        <constructor-arg ref="lookupStrategy"/>
+        <constructor-arg ref="aclCache"/>
+        <property name="classIdentityQuery" value="SELECT lastval()"/>
+        <property name="sidIdentityQuery" value="SELECT lastval()"/>
+    </bean>
+
+    <!-- A lookup strategy for optimizing database queries -->
+    <bean id="lookupStrategy" class="org.springframework.security.acls.jdbc.BasicLookupStrategy">
+        <constructor-arg ref="dataSource"/>
+        <constructor-arg ref="aclCache"/>
+        <constructor-arg ref="aclAuthorizationStrategy"/>
+        <constructor-arg ref="auditLogger"/>
+        <property name="permissionFactory" ref="customPermissionFactory"/>
+    </bean>
+
+    <!-- An ACL cache to minimize calls to the ACL database -->
+    <bean id="aclCache" class="org.springframework.security.acls.domain.EhCacheBasedAclCache">
+        <constructor-arg ref="ehCacheFactoryBean"/>
+        <constructor-arg ref="permissionGrantingStrategy"/>
+        <constructor-arg ref="aclAuthorizationStrategy"/>
+    </bean>
+
+    <bean id="permissionGrantingStrategy"
+          class="org.springframework.security.acls.domain.DefaultPermissionGrantingStrategy">
+        <constructor-arg ref="auditLogger"/>
+    </bean>
+
+    <bean id="ehCacheFactoryBean" class="org.springframework.cache.ehcache.EhCacheFactoryBean">
+        <property name="cacheManager">
+            <bean class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+                <property name="shared" value="true" />
+            </bean>
+        </property>
+        <property name="cacheName" value="aclCache"/>
+    </bean>
+    <!-- An ACL authorization strategy to determine whether a principal is permitted to call administrative methods -->
+    <bean id="aclAuthorizationStrategy" class="org.springframework.security.acls.domain.AclAuthorizationStrategyImpl">
+        <constructor-arg>
+            <list>
+                <bean class="org.springframework.security.core.authority.SimpleGrantedAuthority">
+                    <constructor-arg value="ROLE_ADMIN"/>
+                </bean>
+                <bean class="org.springframework.security.core.authority.SimpleGrantedAuthority">
+                    <constructor-arg value="ROLE_ADMIN"/>
+                </bean>
+                <bean class="org.springframework.security.core.authority.SimpleGrantedAuthority">
+                    <constructor-arg value="ROLE_ADMIN"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <!-- An audit logger used to log audit events -->
+    <bean id="auditLogger" class="org.springframework.security.acls.domain.ConsoleAuditLogger"/>
+
+    <!-- Defines the role order -->
+    <!-- http://static.springsource.org/spring-security/site/docs/3.0.x/apidocs/org/springframework/security/access/hierarchicalroles/RoleHierarchyImpl.html -->
+    <bean id="roleHierarchy" class="org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl">
+        <property name="hierarchy">
+            <value></value>
+        </property>
+    </bean>
+</beans>
