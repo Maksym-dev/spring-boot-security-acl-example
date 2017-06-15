@@ -7,7 +7,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -17,7 +16,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @SpringBootApplication
 @EnableTransactionManagement
-@EnableAspectJAutoProxy
 public class Application {
     /**
      * Method starts application.
@@ -44,6 +42,7 @@ public class Application {
             }
             userService.readAll().forEach(System.out::println);
             SecurityContextHolder.clearContext();
+            System.exit(0);
         };
     }
 }
