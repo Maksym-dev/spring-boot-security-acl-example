@@ -6,6 +6,7 @@ import com.maksym.springboot.example.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,7 +24,8 @@ public class Application {
      * @param args input arguments from console.
      */
     public static void main(final String[] args) {
-        SpringApplication.run(Application.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+        SpringApplication.exit(context);
     }
 
     @Bean
@@ -42,7 +44,6 @@ public class Application {
             }
             userService.readAll().forEach(System.out::println);
             SecurityContextHolder.clearContext();
-            System.exit(0);
         };
     }
 }
