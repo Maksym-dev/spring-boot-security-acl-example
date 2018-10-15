@@ -12,7 +12,7 @@ public class AdminUserPermissionHandler implements PermissionHandler {
     @Override
     public boolean hasPermission(Authentication authentication, Object domain) {
         User user = (User) domain;
-        System.out.println(user);
+        System.out.println("Handling permission for object: " + user);
         return true;
     }
 }

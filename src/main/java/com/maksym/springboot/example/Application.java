@@ -40,8 +40,9 @@ public class Application {
             for (int i = 0; i < 10; i++) {
                 User user = new User();
                 user.setName("Ivan");
-                userService.create(user);
+                System.out.println("Created user: " + userService.create(user));
             }
+            System.out.println("All users:");
             userService.readAll().forEach(System.out::println);
             SecurityContextHolder.clearContext();
         };
